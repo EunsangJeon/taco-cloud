@@ -1,9 +1,8 @@
 package tacos.repository;
 
+import org.springframework.data.repository.CrudRepository;
 import tacos.model.IngredientDto;
 
-public interface IngredientRepository {
-    Iterable<IngredientDto> findAll();
-    IngredientDto findById(String id);
-    IngredientDto save(IngredientDto ingredient);
+public interface IngredientRepository
+    extends CrudRepository<IngredientDto, String> {
 }
