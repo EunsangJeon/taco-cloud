@@ -1,28 +1,52 @@
 package tacos.controller;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import tacos.model.IngredientDto;
 import tacos.model.IngredientDto.Type;
+import tacos.model.OrderDto;
 import tacos.model.TacoDto;
+import tacos.repository.IngredientRepository;
+import tacos.repository.TacoRepository;
 
 import javax.validation.Valid;
 
 @Slf4j
 @Controller
 @RequestMapping("/design")
+@SessionAttributes("orderDto")
 public class DesignTacoController {
+
+    private final IngredientRepository ingredientRepo;
+    private final TacoRepository tacoRepo;
+
+    @Autowired
+    public DesignTacoController(
+            IngredientRepository ingredientRepo, TacoRepository tacoRepo) {
+
+        this.ingredientRepo = ingredientRepo;
+        this.tacoRepo = tacoRepo;
+    }
+
+    @ModelAttribute(name = "orderDto")
+    public OrderDto order() {
+        return new OrderDto();
+    }
+
+    @ModelAttribute(name = "tacoDto")
+    public TacoDto taco() {
+        return new TacoDto();
+    }
 
     @GetMapping
     public String showDesignForm(Model model) {
@@ -34,7 +58,9 @@ public class DesignTacoController {
     }
 
     @PostMapping
-    public String processDesign(@Valid TacoDto design, BindingResult result, Model model) {
+    public String processDesign(
+            @Valid TacoDto design, BindingResult result,
+            Model model, @ModelAttribute OrderDto orderDto) {
 
         if (result.hasErrors()) {
             addIngredientToViewModel(model);
@@ -42,7 +68,8 @@ public class DesignTacoController {
             return "design";
         }
 
-        // TODO: DB integration
+        TacoDto saved = tacoRepo.save(design);
+        orderDto.addDesign(saved);
         log.info("Processing design: " + design);
 
         return "redirect:/orders/current";
@@ -57,17 +84,8 @@ public class DesignTacoController {
 
     private void addIngredientToViewModel(Model model) {
 
-        List<IngredientDto> ingredients = Arrays.asList(
-                new IngredientDto("FLTO", "Flour Tortilla", Type.WRAP),
-                new IngredientDto("COTO", "Corn Tortilla", Type.WRAP),
-                new IngredientDto("GRBF", "Ground Beef", Type.PROTEIN),
-                new IngredientDto("CARN", "Carnitas", Type.PROTEIN),
-                new IngredientDto("TMTO", "Diced Tomatoes", Type.VEGGIES),
-                new IngredientDto("LETC", "Lettuce", Type.VEGGIES),
-                new IngredientDto("CHED", "Cheddar", Type.CHEESE),
-                new IngredientDto("JACK", "Monterrey Jack", Type.CHEESE),
-                new IngredientDto("SLSA", "Salsa", Type.SAUCE),
-                new IngredientDto("SRCR", "Sour Cream", Type.SAUCE));
+        List<IngredientDto> ingredients = new ArrayList<>();
+        ingredientRepo.findAll().forEach(ingredients::add);
 
         Type[] types = IngredientDto.Type.values();
 
