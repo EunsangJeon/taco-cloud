@@ -10,6 +10,7 @@ import javax.persistence.Id;
 
 @Data
 @NoArgsConstructor(force = true)
+@RequiredArgsConstructor
 @Entity
 public class IngredientDto {
 
